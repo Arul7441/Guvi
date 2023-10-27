@@ -1,0 +1,60 @@
+-- Give the Country code from the order id column
+SELECT DISTINCT SUBSTRING(order_id, 1, 2) AS country_code
+FROM sales_data;
+
+-- Get the top 5 profit from sales for each city wise
+WITH RankedProfits AS (
+  SELECT city, sales, profits, 
+         ROW_NUMBER() OVER (PARTITION BY city ORDER BY profits DESC) AS rn
+  FROM sales_data
+)
+SELECT city, sales, profits
+FROM RankedProfits
+WHERE rn <= 5;
+
+-- Extract the maximum values using row number function, remove duplicates from city, state
+WITH MaxValues AS (
+  SELECT city, state, MAX(sales) AS max_sales, MAX(profits) AS max_profits
+  FROM sales_data
+  GROUP BY city, state
+)
+SELECT city, state, max_sales, max_profits
+FROM MaxValues;
+
+-- Segment wise sales which are greater than 500
+SELECT segment, SUM(sales) AS total_sales
+FROM sales_data
+WHERE sales > 500
+GROUP BY segment;
+
+-- Category Sales 0 - 100 as low, 101 - 500 medium, 500 - 2000 as high, > 2000 as best
+SELECT category,
+  CASE
+    WHEN sales <= 100 THEN 'low'
+    WHEN sales <= 500 THEN 'medium'
+    WHEN sales <= 2000 THEN 'high'
+    ELSE 'best'
+  END AS sales_category
+FROM sales_data;
+
+-- City, region-wise sum of sales, profits, count of sales & profits
+SELECT region, city, 
+       SUM(sales) AS total_sales, 
+       SUM(profits) AS total_profits, 
+       COUNT(sales) AS sales_count, 
+       COUNT(profits) AS profits_count
+FROM sales_data
+GROUP BY region, city;
+
+-- Select all the records belonging to region east & west with sales > 500
+SELECT *
+FROM sales_data
+WHERE region IN ('east', 'west') AND sales > 500;
+
+-- Create rank and dense rank by city and sales
+SELECT city, sales, 
+       RANK() OVER (PARTITION BY city ORDER BY sales) AS rank,
+       DENSE_RANK() OVER (PARTITION BY city ORDER BY sales) AS dense_rank
+FROM sales_data;
+
+
